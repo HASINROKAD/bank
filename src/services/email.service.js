@@ -9,13 +9,12 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify the connection configuration
-// Only verify the connection if we are in development mode
 if (process.env.NODE_ENV !== "production") {
   transporter.verify((error, success) => {
     if (error) {
-      console.error("❌ Email Auth Failed:", error.message);
+      console.error(" Email Auth Failed:", error.message);
     } else {
-      console.log("✅ Email Server is ready");
+      console.log(" Email Server is ready");
     }
   });
 }
