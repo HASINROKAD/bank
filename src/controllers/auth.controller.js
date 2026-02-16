@@ -29,7 +29,7 @@ async function userRegisterController(req, res) {
 
   const token = jwt.sign(
     {
-      userID: user._id,
+      userId: user._id,
     },
     process.env.JWT_SECRET,
     {
@@ -79,7 +79,7 @@ async function userLoginController(req, res) {
 
   const token = jwt.sign(
     {
-      userID: user._id,
+      userId: user._id,
     },
     process.env.JWT_SECRET,
     {
