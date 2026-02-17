@@ -12,9 +12,9 @@ const transporter = nodemailer.createTransport({
 if (process.env.NODE_ENV !== "production") {
   transporter.verify((error, success) => {
     if (error) {
-      console.error(" Email Auth Failed:", error.message);
+      console.error("Email Auth Failed:", error.message);
     } else {
-      console.log(" Email Server is ready");
+      console.log("Email Server is ready to send message");
     }
   });
 }
@@ -46,4 +46,24 @@ async function sendRegistrationEmail(userEmail, name) {
   await sendEmail(userEmail, subject, text, html);
 }
 
-module.exports = { sendRegistrationEmail };
+async function sendTransactionEmail(userEmail, name, amount, toAccount) {
+  const subject = "Transaction Successful!";
+  const text = `Hello ${name},\n\nYour transaction of RS.${amount} to account ${toAccount} was successful.\n\nBest regards,\nThe Bank Backendteam`;
+  const html = `<p>Hello ${name},</p><p>Your transaction of RS.${amount} to account ${toAccount} was successful.</p><p>Best regards,<br>The Bank Backendteam</p>`;
+
+  await sendEmail(userEmail, subject, text, html);
+}
+
+async function sendTransactionFailureEmail(userEmail, name, amount, toAccount) {
+  const subject = "Transaction Failed";
+  const text = `Hello ${name},\n\nWe regret to inform you that your transaction of RS.${amount} to account ${toAccount} was failed.\n\nBest regards,\nThe Bank Backend team`;
+  const html = `<p>Hello ${name},</p><p>We regret to inform you that your transaction of RS.${amount} to account ${toAccount} was failed.</p><p>Best regards,<br>The Bank Backend team</p>`;
+
+  await sendEmail(userEmail, subject, text, html);
+}
+
+module.exports = {
+  sendRegistrationEmail,
+  sendTransactionEmail,
+  sendTransactionFailureEmail,
+};
