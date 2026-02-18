@@ -105,7 +105,15 @@ async function createTransaction(req, res) {
     });
   }
 
+  // Await function to check if the conflict works properly or not
+  // await (() => {
+  //   return new Promise((resolve) => setTimeout(resolve, 15 * 1000));
+  // })();
+
   let transaction;
+  // Define session here so it is accessible in both try and catch
+  const session = await mongoose.startSession();
+
   try {
     /**
      * 5. Create transaction (PENDING)
@@ -114,7 +122,6 @@ async function createTransaction(req, res) {
      * 8. Mark transaction COMPLETED
      * 9. Commit MongoDB session
      */
-    const session = await mongoose.startSession();
     session.startTransaction();
 
     transaction = (
@@ -144,11 +151,6 @@ async function createTransaction(req, res) {
       { session },
     );
 
-    // Await function to check if the conflict works properly or not
-    // await (() => {
-    //   return new Promise((resolve) => setTimeout(resolve, 15 * 1000));
-    // })();
-
     const creditLedgerEntry = await ledgerModel.create(
       [
         {
@@ -169,26 +171,49 @@ async function createTransaction(req, res) {
 
     await session.commitTransaction();
     session.endSession();
+
+    /**
+     * 10. Send email notification (Success)
+     */
+    await emailService.sendTransactionEmail(
+      req.user.email,
+      req.user.name,
+      amount,
+      toAccount,
+    );
+
+    return res.status(201).json({
+      message: "Transaction completed successfully",
+      transaction: transaction,
+    });
   } catch (error) {
+    // ABORT: Undoes any DB changes (like the Debit) if the session is active
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    session.endSession();
+
+    console.error("Transaction Error:", error);
+
+    // UPDATE DB STATUS: Mark the transaction as FAILED
+    await transactionModel.findOneAndUpdate(
+      { idempotencyKey: idempotencyKey },
+      { status: "FAILED" },
+    );
+
+    // NOTIFY USER: Send the failure email
+    await emailService.sendTransactionFailureEmail(
+      req.user.email,
+      req.user.name,
+      amount,
+      toAccount,
+    );
+
     return res.status(400).json({
       message:
-        "Transaction is Pending due to some issue, please retry after sometime",
+        "Transaction failed due to some issue, please retry after sometime",
     });
   }
-  /**
-   * 10. Send email notification
-   */
-  await emailService.sendTransactionEmail(
-    req.user.email,
-    req.user.name,
-    amount,
-    toAccount,
-  );
-
-  return res.status(201).json({
-    message: "Transaction completed successfully",
-    transaction: transaction,
-  });
 }
 
 async function createInitialFundsTransaction(req, res) {
