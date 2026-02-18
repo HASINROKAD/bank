@@ -20,9 +20,9 @@ tokenBlacklistSchema.index(
   },
 );
 
-const tokenBlacklistModel = mongoose.model(
-  "tokenBlacklist",
+const tokenBlackListModel = mongoose.model(
+  "tokenBlackList",
   tokenBlacklistSchema,
 );
 
-module.exports = tokenBlacklistModel;
+module.exports = tokenBlackListModel;
